@@ -15,7 +15,7 @@ function App() {
     useEffect(() => {
         const getTasks = async () => {
             const tasksFromServer = await fetchTasks()
-            setTasks(tasksFromServer.json())
+            setTasks(tasksFromServer)
           }
       
           getTasks()
@@ -30,9 +30,9 @@ function App() {
             headers: {'Content-type': 'application/json'},
             body: JSON.stringify(task)
         })
-        const data = res.json()
+        const data = await res.json()
 
-        setTasks(...task, data)
+        setTasks([...tasks, data])
     }
 
     //Delete Task
@@ -44,19 +44,42 @@ function App() {
     }
 
     //Toggle Reminder
-    const toggleReminder = (id) => {
+    const toggleReminder = async (id) => {
+        const toggleTask = await fetchTask(id)
+        const updTask = {...toggleTask, reminder: !toggleTask.reminder}
+
+        const res = await fetch(`http://localhost:5000/tasks/${id}`, {
+            method: 'PUT',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify(updTask)
+        })
+        const data = await res.json()
+
         setTasks(tasks.map((task) => task.id === id ?
-        {...task, reminder: !task.reminder} : task))
+        {...task, reminder: data.reminder} : task))
+    }
+
+    //Fetch Task
+    const fetchTask = async (id) => {
+        try{
+            const res = await fetch(`http://localhost:5000/tasks/${id}`)
+            const data = await res.json()
+            return(data)
+        }   catch(e){
+            console.error(e)
+        }     
     }
 
     //Fetch Taskes
     const fetchTasks = async () => {
+        try{
+            const res = await fetch('http://localhost:5000/tasks')
+            const data = await res.json()
 
-        const res = await fetch('http://localhost:5000/tasks')
-        const data = await res.json()
-
-        setTasks(data)
-    
+            return(data)
+        }catch(e){
+            console.error(e)
+        }
     }
 
     return(
